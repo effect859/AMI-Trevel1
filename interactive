@@ -1,0 +1,499 @@
+import SwiftUI
+
+@main
+struct AmiTravelApp: App {
+    var body: some Scene {
+        WindowGroup {
+            AmiTravelView()
+        }
+    }
+}
+
+enum Screen {
+    case start
+    case mood
+    case difficulty
+    case format
+    case destination
+    case result
+    case completion
+}
+
+struct Destination: Identifiable {
+    let id: String
+    let name: String
+    let imageUrl: String
+}
+
+struct Selection {
+    var mood: String = ""
+    var difficulty: String = ""
+    var format: String = ""
+    var destination: String = ""
+}
+
+struct AmiTravelView: View {
+    @State private var currentScreen: Screen = .start
+    @State private var startTime: Date? = nil
+    @State private var elapsedTime: Int = 0
+    @State private var selection = Selection()
+    
+    private let destinations: [Destination] = [
+        Destination(
+            id: "altai",
+            name: "Алтайские горы",
+            imageUrl: "https://images.unsplash.com/photo-1757347762010-5c7891709056?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxBbHRhaSUyMG1vdW50YWlucyUyMFJ1c3NpYXxlbnwxfHx8fDE3NjU4MDcyMzF8MA&ixlib=rb-4.1.0&q=80&w=1080"
+        ),
+        Destination(
+            id: "kamchatka",
+            name: "Камчатка",
+            imageUrl: "https://images.unsplash.com/photo-1722693948340-13e42ea24acf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxLYW1jaGF0a2ElMjB2b2xjYW5vJTIwUnVzc2lhfGVufDF8fHx8MTc2NTgwNzIzMXww&ixlib=rb-4.1.0&q=80&w=1080"
+        ),
+        Destination(
+            id: "baikal",
+            name: "Байкал",
+            imageUrl: "https://images.unsplash.com/photo-1501675423372-9bfa95849e62?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxMYWtlJTIwQmFpa2FsJTIwUnVzc2lhfGVufDF8fHx8MTc2NTgwNzIzMXww&ixlib=rb-4.1.0&q=80&w=1080"
+        ),
+        Destination(
+            id: "caucasus",
+            name: "Кавказ",
+            imageUrl: "https://images.unsplash.com/photo-1577701122197-c9607038bd90?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxDYXVjYXN1cyUyMG1vdW50YWluc3xlbnwxfHx8fDE3NjU4MDcyMzJ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+        ),
+        Destination(
+            id: "karelia",
+            name: "Карелия",
+            imageUrl: "https://images.unsplash.com/photo-1754898223463-cb0a609d1312?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxLYXJlbGlhJTIwZm9yZXN0JTIwbGFrZXN8ZW58MXx8fHwxNzY1ODA3MjMyfDA&ixlib=rb-4.1.0&q=80&w=1080"
+        ),
+        Destination(
+            id: "sakhalin",
+            name: "Сахалин",
+            imageUrl: "https://images.unsplash.com/photo-1540903475064-248d0292c635?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxTYWtoYWxpbiUyMGlzbGFuZCUyMGNvYXN0fGVufDF8fHx8MTc2NTgwNzIzMnww&ixlib=rb-4.1.0&q=80&w=1080"
+        )
+    ]
+    
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Color(uiColor: .systemGroupedBackground)
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer(minLength: 0)
+                
+                ZStack {
+                    switch currentScreen {
+                    case .start:
+                        screenStart
+                    case .mood:
+                        screenMood
+                    case .difficulty:
+                        screenDifficulty
+                    case .format:
+                        screenFormat
+                    case .destination:
+                        screenDestination
+                    case .result:
+                        screenResult
+                    case .completion:
+                        screenCompletion
+                    }
+                }
+                .frame(maxWidth: 500)
+                .frame(minHeight: 500)
+                .padding(.horizontal, 16)
+                
+                Spacer(minLength: 0)
+            }
+            
+            // «Логотип» текстом Ami Travel
+            Text("Ami Travel")
+                .font(.system(size: 18, weight: .semibold))
+                .padding(.leading, 32)
+                .padding(.top, 24)
+        }
+        .onChange(of: currentScreen) { newValue in
+            if newValue == .start {
+                startTime = nil
+                elapsedTime = 0
+                selection = Selection()
+            }
+        }
+    }
+    
+    // MARK: - Экраны
+    
+    private var screenStart: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            VStack(spacing: 16) {
+                Text("Создайте маршрут по России за 30 секунд")
+                    .font(.system(size: 36, weight: .medium))
+                    .multilineTextAlignment(.center)
+                Text("Большинство бросают до наступления этого шага")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Button(action: handleStart) {
+                Text("Начать")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .background(Color("Primary", bundle: nil).opacity(1.0))
+                    .foregroundColor(.white)
+                    .cornerRadius(20)
+                    .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+            }
+            Spacer()
+        }
+    }
+    
+    private var screenMood: some View {
+        VStack(spacing: 40) {
+            Spacer()
+            Text("Что вы хотите почувствовать?")
+                .font(.system(size: 36, weight: .medium))
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 16) {
+                moodButton(emoji: "⚡", text: "Действие")
+                moodButton(emoji: "🌲", text: "Природа")
+                moodButton(emoji: "🏔️", text: "Вызов")
+            }
+            Spacer()
+        }
+    }
+    
+    private func moodButton(emoji: String, text: String) -> some View {
+        Button {
+            handleMoodSelect(text)
+        } label: {
+            VStack(spacing: 8) {
+                Text(emoji).font(.system(size: 24))
+                Text(text)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 28)
+            .background(Color.white)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.black.opacity(0.1), lineWidth: 2)
+            )
+            .cornerRadius(20)
+            .shadow(color: .black.opacity(0.04), radius: 5, y: 3)
+        }
+    }
+    
+    private var screenDifficulty: some View {
+        VStack(spacing: 40) {
+            Spacer()
+            Text("Выберите ваш уровень")
+                .font(.system(size: 36, weight: .medium))
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 16) {
+                difficultyButton(text: "Новичок", isPrimary: false)
+                difficultyButton(text: "Опытный", isPrimary: true)
+                difficultyButton(text: "Эксперт", isPrimary: false)
+            }
+            Spacer()
+        }
+    }
+    
+    private func difficultyButton(text: String, isPrimary: Bool) -> some View {
+        Button {
+            handleDifficultySelect(text)
+        } label: {
+            Text(text)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 22)
+                .background(isPrimary ? Color("Primary", bundle: nil) : Color.white)
+                .foregroundColor(isPrimary ? .white : .primary)
+                .overlay(
+                    Group {
+                        if !isPrimary {
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.black.opacity(0.1), lineWidth: 2)
+                        }
+                    }
+                )
+                .cornerRadius(20)
+                .shadow(color: .black.opacity(0.05), radius: 5, y: 3)
+        }
+    }
+    
+    private var screenFormat: some View {
+        VStack(spacing: 40) {
+            Spacer()
+            Text("Как вы хотите путешествовать?")
+                .font(.system(size: 36, weight: .medium))
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 16) {
+                formatButton(text: "Пеший туризм", isPrimary: true)
+                formatButton(text: "Рафтинг", isPrimary: false, label: "Сплавы")
+                formatButton(text: "Горы", isPrimary: false)
+            }
+            Spacer()
+        }
+    }
+    
+    private func formatButton(text: String, isPrimary: Bool, label: String? = nil) -> some View {
+        Button {
+            handleFormatSelect(text)
+        } label: {
+            Text(label ?? text)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 22)
+                .background(isPrimary ? Color("Primary", bundle: nil) : Color.white)
+                .foregroundColor(isPrimary ? .white : .primary)
+                .overlay(
+                    Group {
+                        if !isPrimary {
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.black.opacity(0.1), lineWidth: 2)
+                        }
+                    }
+                )
+                .cornerRadius(20)
+                .shadow(color: .black.opacity(0.05), radius: 5, y: 3)
+        }
+    }
+    
+    private var screenDestination: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Выберите направление")
+                .font(.system(size: 36, weight: .medium))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 24)
+            
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    ForEach(destinations) { dest in
+                        Button {
+                            handleDestinationSelect(dest.name)
+                        } label: {
+                            ZStack(alignment: .bottomLeading) {
+                                AsyncImage(url: URL(string: dest.imageUrl)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    case .failure(_):
+                                        Color.gray.opacity(0.3)
+                                    case .empty:
+                                        ProgressView()
+                                    @unknown default:
+                                        Color.gray.opacity(0.3)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .clipped()
+                                
+                                LinearGradient(
+                                    colors: [
+                                        .black.opacity(0.7),
+                                        .black.opacity(0.2),
+                                        .clear
+                                    ],
+                                    startPoint: .bottom,
+                                    endPoint: .top
+                                )
+                                
+                                Text(dest.name)
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .padding(12)
+                            }
+                            .aspectRatio(3/4, contentMode: .fit)
+                            .background(Color.white)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.black.opacity(0.1), lineWidth: 2)
+                            )
+                            .cornerRadius(20)
+                            .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+                        }
+                    }
+                }
+                .padding(.bottom, 16)
+            }
+        }
+    }
+    
+    private var screenResult: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            Text("Ваш маршрут готов")
+                .font(.system(size: 36, weight: .medium))
+                .multilineTextAlignment(.center)
+            
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Локация")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\((selection.destination.isEmpty ? "Алтайские горы" : selection.destination)), Россия")
+                        .font(.system(size: 26, weight: .medium))
+                        .lineLimit(2)
+                }
+                
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Длительность")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("4 дня")
+                            .font(.system(size: 18))
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Активность")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(selection.format.isEmpty ? "Пеший туризм" : selection.format)
+                            .font(.system(size: 18))
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Сложность")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(selection.difficulty.isEmpty ? "Опытный" : selection.difficulty)
+                        .font(.system(size: 18))
+                }
+                
+                Divider().padding(.top, 8)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(Color.green)
+                        Text("Проверенный партнёр")
+                    }
+                    HStack(spacing: 8) {
+                        Image(systemName: "shield.checkerboard")
+                            .foregroundColor(Color.green)
+                        Text("Проверка безопасности пройдена")
+                    }
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .stroke(Color("Primary", bundle: nil), lineWidth: 2)
+                                .frame(width: 28, height: 28)
+                            Image(systemName: "trophy.fill")
+                                .foregroundColor(Color("Primary", bundle: nil))
+                                .font(.system(size: 14))
+                        }
+                        Text("+1 уровень путешественника")
+                            .foregroundColor(Color("Primary", bundle: nil))
+                    }
+                    .padding(12)
+                    .background(Color("Accent", bundle: nil).opacity(0.25))
+                    .cornerRadius(16)
+                    .padding(.top, 4)
+                }
+            }
+            .padding(24)
+            .background(Color(.systemBackground))
+            .cornerRadius(24)
+            .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
+            
+            Button(action: handleComplete) {
+                Text("Продолжить")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .background(Color("Primary", bundle: nil))
+                    .foregroundColor(.white)
+                    .cornerRadius(20)
+                    .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+            }
+            Spacer()
+        }
+    }
+    
+    private var screenCompletion: some View {
+        VStack(spacing: 40) {
+            Spacer()
+            VStack(spacing: 16) {
+                Text("Вы справились за \(elapsedTime) \(getSecondsWord(elapsedTime))")
+                    .font(.system(size: 52, weight: .medium))
+                    .multilineTextAlignment(.center)
+                VStack(spacing: 8) {
+                    Text("Поэтому с Ami Travel не бросают")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
+                    Text("Открывайте Россию без хаоса")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Button(action: handleRestart) {
+                Text("Начать сначала")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .background(Color.white)
+                    .foregroundColor(Color("Primary", bundle: nil))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color("Primary", bundle: nil), lineWidth: 2)
+                    )
+                    .cornerRadius(20)
+                    .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+            }
+            Spacer()
+        }
+    }
+    
+    // MARK: - Логика
+    
+    private func handleStart() {
+        startTime = Date()
+        currentScreen = .mood
+    }
+    
+    private func handleMoodSelect(_ mood: String) {
+        selection.mood = mood
+        currentScreen = .difficulty
+    }
+    
+    private func handleDifficultySelect(_ difficulty: String) {
+        selection.difficulty = difficulty
+        currentScreen = .format
+    }
+    
+    private func handleFormatSelect(_ format: String) {
+        selection.format = format
+        currentScreen = .destination
+    }
+    
+    private func handleDestinationSelect(_ destination: String) {
+        selection.destination = destination
+        currentScreen = .result
+    }
+    
+    private func handleComplete() {
+        if let start = startTime {
+            elapsedTime = Int(Date().timeIntervalSince(start))
+        } else {
+            elapsedTime = 0
+        }
+        currentScreen = .completion
+    }
+    
+    private func handleRestart() {
+        currentScreen = .start
+    }
+    
+    private func getSecondsWord(_ num: Int) -> String {
+        let lastDigit = num % 10
+        let lastTwo = num % 100
+        
+        if lastTwo >= 11 && lastTwo <= 14 { return "секунд" }
+        if lastDigit == 1 { return "секунду" }
+        if (2...4).contains(lastDigit) { return "секунды" }
+        return "секунд"
+    }
+}
